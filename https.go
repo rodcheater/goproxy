@@ -186,7 +186,13 @@ func (proxy *ProxyHttpServer) handleHttps(w http.ResponseWriter, r *http.Request
 			}
 			defer rawClientTls.Close()
 			clientTlsReader := bufio.NewReader(rawClientTls)
-			for !isEof(clientTlsReader) {
+			for !isEof(clientTlsReader, ctx) {
+				_, err := clientTlsReader.Peek(1)
+				if err == io.EOF {
+					ctx.Warnf("EOF error peeking at TLS request: %v", err)
+				} else if err != nil {
+					ctx.Warnf("Some other error peeking at TLS request: %v", err)
+				}
 				req, err := http.ReadRequest(clientTlsReader)
 				var ctx = &ProxyCtx{Req: req, Session: atomic.AddInt64(&proxy.sess, 1), proxy: proxy}
 				if err != nil && err != io.EOF {

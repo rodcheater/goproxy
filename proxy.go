@@ -42,11 +42,13 @@ func copyHeaders(dst, src http.Header) {
 	}
 }
 
-func isEof(r *bufio.Reader) bool {
-	_, err := r.Peek(1)
+func isEof(r *bufio.Reader, ctx *ProxyCtx) bool {
+	bytes, err := r.Peek(1)
 	if err == io.EOF {
+		ctx.Warnf("EOF error: %v", bytes)
 		return true
 	}
+	ctx.Warnf("Not EOF error: %v, %v", err, bytes)
 	return false
 }
 
